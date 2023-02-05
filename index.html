@@ -1,0 +1,510 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Edmonton Zoning Map Sample</title>
+
+    <style>
+        html,
+        body,
+        #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100vh;
+            width: 100%;
+            font-family: "Montserrat";
+        }
+
+        .header {
+            position: absolute;
+            display: flex;
+            width: 100%;
+            height: 55px;
+            z-index: 1;
+            color: #f8f8f8;
+            background: #69635c;
+            font-size: 20px;
+        }
+
+        .title,
+        .theme-select {
+            flex: 1 1;
+            margin: 15px;
+        }
+
+        .title {
+            align-self: flex-start;
+        }
+
+        .theme-select {
+            flex-shrink: 2;
+            align-self: right;
+            max-width: 100px;
+            margin: 17px;
+        }
+
+        /* Splash screen styles */
+        #splash-screen {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(-50%, -50%);
+        }
+
+        #splash-screen p {
+            text-align: center;
+            font-size: 1.0rem;
+            line-height: 1.5;
+            max-width: 800px;
+        }
+
+        #splash-screen button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #337ab7;
+            color: #fff;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        /* Widget containers and all buttons */
+
+        .theme .esri-widget,
+        .theme .esri-widget--button,
+        .theme .esri-widget .esri-menu,
+        .theme .esri-widget table,
+        .theme .esri-popup__main-container,
+        .theme .esri-popup .esri-popup__pointer-direction,
+        .theme .esri-popup .esri-popup__button,
+        .theme .esri-button,
+        .theme .esri-widget a {
+            background-color: #69635c;
+            color: #fff;
+        }
+
+        /* Focus/hover states */
+
+        .theme .esri-widget--button:focus,
+        .theme .esri-widget--button:hover {
+            background-color: #b35c00;
+            color: #f8f8f8;
+        }
+
+        .theme .esri-button:focus,
+        .theme .esri-button:hover {
+            color: #fff;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- <link rel="icon" href="https://www.cann.dev/wp-content/uploads/2022/04/favicon-2-150x150.png" sizes="32x32" /> -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.25/"></script>
+
+    <script>
+        require(["esri/Map", "esri/layers/GeoJSONLayer", "esri/views/MapView", "esri/widgets/Legend", "esri/widgets/BasemapGallery", "esri/widgets/Expand", "esri/widgets/Home", "esri/widgets/Legend"], (
+            Map,
+            GeoJSONLayer,
+            MapView,
+            Legend,
+            BasemapGallery,
+            Expand,
+            Home
+        ) => {
+            // If GeoJSON files are not on the same domain as your website, a CORS enabled server
+            // or a proxy is required.
+            const url =
+                "Zoning Overlays.geojson";
+
+            // Set up popup template
+            const template = {
+                // autocasts as new PopupTemplate()
+                title: "{overlay_code}",
+                content: [
+                    {
+                        // It is also possible to set the fieldInfos outside of the content
+                        // directly in the popupTemplate. If no fieldInfos is specifically set
+                        // in the content, it defaults to whatever may be set within the popupTemplate.
+                        type: "fields",
+                        fieldInfos: [
+                            {
+                                fieldName: "overlay_code",
+                                label: "Overlay Code"
+                            },
+                            {
+                                fieldName: "overlay_descr",
+                                label: "Description"
+                            },
+                            {
+                                fieldName: "bylaw_no",
+                                label: "Bylaw No."
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            //Renderer
+            var layerRenderer =
+            {
+                type: "unique-value",
+                field: "overlay_code",
+                defaultSymbol: { type: "simple-fill", color: "rgba(63,40,102,0.3)" },
+                uniqueValueInfos: [
+                    {
+                        value: "AA",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(255, 146, 0, 0.5)"
+                        }
+                    },
+                    {
+                        value: "AB",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(109, 248, 43, 0.5)"
+                        }
+                    },
+                    {
+                        value: "BF",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(112, 58, 226, 0.5)"
+                        }
+                    },
+                    {
+                        value: "CC",
+                        symbol: {
+                            type: "simple-fill",
+                            color:"rgba(180, 124, 89, 0.5)"
+                        }
+                    },
+                    {
+                        value: "CV",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(235, 153, 144, 0.5)"
+                        }
+                    },
+                    {
+                        value: "DN",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(80, 181, 208, 0.5)"
+                        }
+                    },
+                    {
+                        value: "ED",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(9, 33, 20, 0.5)"
+                        }
+                    },
+                    {
+                        value: "EI",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(255, 119, 254, 0.5)"
+                        }
+                    },
+                    {
+                        value: "ES",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(83, 98, 226, 0.5)"
+                        }
+                    },
+                    {
+                        value: "ET",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(146, 41, 73, 0.5)"
+                        }
+                    },
+                    {
+                        value: "GB",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(10, 0, 43, 0.5)"
+                        }
+                    },
+                    {
+                        value: "GH",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(31, 244, 164, 0.5)"
+                        }
+                    },
+                    {
+                        value: "HL",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(117, 38, 226, 0.5)"
+                        }
+                    },
+                    {
+                        value: "HR",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(32, 138, 60, 0.5)"
+                        }
+                    },
+                    {
+                        value: "HT",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(149, 185, 201, 0.5)"
+                        }
+                    },
+                    {
+                        value: "MD",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(68, 192, 222, 0.5)"
+                        }
+                    },
+                    {
+                        value: "MN",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(138, 108, 221, 0.5)"
+                        }
+                    },
+                    {
+                        value: "MO",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(108, 98, 113, 0.5)"
+                        }
+                    },
+                    {
+                        value: "MS",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(204, 166, 142, 0.5)"
+                        }
+                    },
+                    {
+                        value: "MT",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(168, 135, 26, 0.5)"
+                        }
+                    },
+                    {
+                        value: "OR",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(143, 163, 89, 0.5)"
+                        }
+                    },
+                    {
+                        value: "PC",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(130, 183, 161, 0.5)"
+                        }
+                    },
+                    {
+                        value: "RT",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(224, 246, 230, 0.5)"
+                        }
+                    },
+                    {
+                        value: "RV",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(12,14,150, 0.5)"
+                        }
+                    },
+                    {
+                        value: "SS",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(199, 119, 28, 0.5)"
+                        }
+                    },
+                    {
+                        value: "SW",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(211, 82, 144, 0.5)"
+                        }
+                    },
+                    {
+                        value: "TW",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(207, 241, 18, 0.5)"
+                        }
+                    },
+                    {
+                        value: "WC",
+                        symbol: {
+                            type: "simple-fill",
+                            color: "rgba(4, 3, 5, 0.5)"
+                        }
+                    }
+                ]
+            }
+            //add geojson layers
+            const geojsonLayer = new GeoJSONLayer({
+                url: url,
+                renderer: layerRenderer,
+                popupTemplate: template
+            });
+
+
+            //Change Layer Title for Legend
+            geojsonLayer.title = "Zoning";
+
+            const map = new Map({
+                basemap: "hybrid",
+                layers: [geojsonLayer]
+            });
+
+            const view = new MapView({
+                container: "viewDiv",
+                center: [-113.50889530539204, 53.54349312566244],
+                zoom: 11,
+                map: map,
+                padding: { top: 55 },
+                popup: {
+                    dockEnabled: true,
+                    dockOptions: {
+                        // Disables the dock button from the popup
+                        buttonEnabled: false,
+                        // Ignore the default sizes that trigger responsive docking
+                        breakpoint: false
+                    }
+                },
+            });
+
+
+            var legend = new Legend({
+                view: view
+            });
+            view.ui.add(legend, "bottom-right");
+            //Home
+            const homeBtn = new Home({
+                view: view
+            });
+
+            // Add the home button to the top left corner of the view
+            view.ui.add(homeBtn, "top-left");
+
+
+            // Create a BasemapGallery widget instance and set
+            // its container to a div element
+            const basemapGallery = new BasemapGallery({
+                view: view,
+                container: document.createElement("div")
+            });
+
+            // Create an Expand instance and set the content
+            // property to the DOM node of the basemap gallery widget
+            // Use an Esri icon font to represent the content inside
+            // of the Expand widget
+
+            const bgExpand = new Expand({
+                view: view,
+                content: basemapGallery
+            });
+
+            // close the expand whenever a basemap is selected
+            basemapGallery.watch("activeBasemap", () => {
+                const mobileSize =
+                    view.heightBreakpoint === "xsmall" ||
+                    view.widthBreakpoint === "xsmall";
+
+                if (mobileSize) {
+                    bgExpand.collapse();
+                }
+            });
+
+            // Add the expand instance to the ui
+
+            view.ui.add(bgExpand, "top-left");
+
+            //legend
+            //     view.when(() => {
+            //   // get the first layer in the collection of operational layers in the WebMap
+            //   // when the resources in the MapView have loaded.
+            //   const featureLayer = webmap.layers.getItemAt(0);
+
+            //   const legend = new Legend({
+            //     view: view,
+            //     layerInfos: [
+            //       {
+            //         layer: geojsonLayer,
+            //         title: "Artesia Buffer"
+            //       }
+            //     ]
+            //   });
+
+            //   // Add widget to the bottom left corner of the view
+            //   view.ui.add(legend, "bottom-left");
+            // });
+        });
+
+    </script>
+</head>
+
+<body class="theme">
+    <!-- <nav class="navbar navbar-expand-lg navbar-dark bg-info">
+        <a class="navbar-brand" href="#">Artesia, Los Angeles, CA</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+                </li> -->
+    <!-- <li class="nav-item">
+                    <a class="nav-link" href="#"></a>
+                </li>
+            </ul>
+        </div>
+    </nav> -->
+    <div class="header">
+        <div class="title">
+            Edmonton Zoning Sample Map
+        </div>
+    </div>
+    <div id="viewDiv"></div>
+    <div id="splash-screen">
+        <p> 
+            This demo web map is an illustration of ArcGIS for Javascript mapping capabilities. The demo web map
+            showcases the ability to create visually appealing and informative maps and can be easily embedded
+            in your own website.<br><br>
+
+            Please be advised that this demo web map is for demonstration purposes only and should not be relied upon
+            for any legal or official purposes. The data and information displayed on this demo web map may not be
+            complete, accurate or current and should not be used as a substitute for professional judgement or advice.
+            Thank you for your interest. <br> <br>Click <a href="https://cygis.ca/contact/" target="_blank">here</a> to connect with me!<br><button id="splash-screen-button">I
+                agree</button></p>
+
+
+    </div>
+    <script>
+        $('#splash-screen-button').on('click', function () {
+            $('#splash-screen').hide();
+        });
+    </script>
+
+</body>
+
+</html>
